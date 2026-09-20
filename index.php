@@ -56,43 +56,5 @@ $rankings = $pdo->query($sql)->fetchAll();
         <a href="municipalities.php" class="btn-primary">Explore Municipalities</a>
     </section>
 
-    <section class="content-section" id="municipalities">
-        <h2>Municipal Performance Leaderboard</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>Palika Name</th>
-                    <th>District</th>
-                    <th>Ratings</th>
-                    <th>Roads</th>
-                    <th>Waste</th>
-                    <th>Health</th>
-                    <th>Efficiency</th>
-                    <th>Transparency</th>
-                    <th>Overall</th>
-                </tr>
-            </thead>
-            <tbody>
-                <?php foreach ($rankings as $row): ?>
-                    <tr>
-                        <td><strong><?= htmlspecialchars($row['name']) ?></strong></td>
-                        <td><?= htmlspecialchars($row['district']) ?></td>
-                        <td><?= $row['total_reviews'] ?></td>
-                        <td><?= $row['avg_roads'] ?? '-' ?></td>
-                        <td><?= $row['avg_waste'] ?? '-' ?></td>
-                        <td><?= $row['avg_health'] ?? '-' ?></td>
-                        <td><?= $row['avg_efficiency'] ?? '-' ?></td>
-                        <td><?= $row['avg_transparency'] ?? '-' ?></td>
-                        <td>
-                            <span class="score-badge">
-                                <?= $row['avg_overall'] ? $row['avg_overall'] : 'N/A' ?>
-                            </span>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-            </tbody>
-        </table>
-    </section>
-
 </body>
 </html>
