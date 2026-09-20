@@ -34,7 +34,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$rating_options = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0];
+$rating_options = [
+    '1' => 1.0,
+    '1.5' => 1.5,
+    '2' => 2.0,
+    '2.5' => 2.5,
+    '3' => 3.0,
+    '3.5' => 3.5,
+    '4' => 4.0,
+    '4.5' => 4.5,
+    '5' => 5.0
+];
 ?>
 
 <!DOCTYPE html>
@@ -94,11 +104,11 @@ $rating_options = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0];
             foreach ($categories as $field => $label): 
             ?>
                 <div class="form-group">
-                    <label><?= $label ?> Rating (1.0 to 5.0)</label>
+                    <label><?= $label ?> Rating</label>
                     <select name="<?= $field ?>" required>
-                        <?php foreach ($rating_options as $val): ?>
-                            <option value="<?= number_format($val, 1) ?>" <?= $val == 3.0 ? 'selected' : '' ?>>
-                                <?= number_format($val, 1) ?> / 5.0
+                        <?php foreach ($rating_options as $display => $num_val): ?>
+                            <option value="<?= $num_val ?>" <?= $num_val == 3.0 ? 'selected' : '' ?>>
+                                <?= $display ?> / 5
                             </option>
                         <?php endforeach; ?>
                     </select>
