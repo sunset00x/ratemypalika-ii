@@ -1,9 +1,9 @@
 <?php
-// db.php
-$host = '127.0.0.1';
-$db   = 'ratemypalika';
-$user = 'root';
-$pass = '';
+
+$host    = '127.0.0.1';
+$db      = 'ratemypalika';
+$user    = 'root';
+$pass    = '';
 $charset = 'utf8mb4';
 
 $dsn = "mysql:host=$host;dbname=$db;charset=$charset";
@@ -14,7 +14,7 @@ $options = [
 ];
 
 try {
-     $pdo = new PDO($dsn, $user, $pass, $options);
+    $pdo = new PDO($dsn, $user, $pass, $options);
 } catch (\PDOException $e) {
-     throw new \PDOException($e->getMessage(), (int)$e->getCode());
+    throw new \PDOException($e->getMessage(), (int)$e->getCode());
 }

@@ -1,8 +1,6 @@
 <?php
-// index.php
-require_once 'db.php';
+require_once __DIR__ . '/config/db.php';
 
-// Fetch Palikas with calculated average score and total review counts
 $sql = "
     SELECT 
         p.id, 
@@ -23,93 +21,78 @@ $sql = "
 ";
 
 $rankings = $pdo->query($sql)->fetchAll();
-
-// Fetch 10 most recent qualitative reviews
-$recent_reviews = $pdo->query("
-    SELECT r.*, p.name AS palika_name 
-    FROM reviews r 
-    JOIN palikas p ON r.palika_id = p.id 
-    ORDER BY r.created_at DESC 
-    LIMIT 10
-")->fetchAll();
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Rate My Palika - Public Governance Leaderboard</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 30px; background: #f8f9fa; }
-        .container { max-width: 1100px; margin: 0 auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-        table { width: 100%; border-collapse: collapse; background: #fff; margin-bottom: 30px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e9ecef; }
-        th { background: #343a40; color: #fff; }
-        tr:hover { background: #f1f3f5; }
-        .badge { background: #28a745; color: white; padding: 4px 8px; border-radius: 4px; font-weight: bold; }
-        .card { background: #fff; padding: 15px; margin-bottom: 10px; border-radius: 6px; border-left: 4px solid #0066cc; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .btn { background: #0066cc; color: #fff; padding: 10px 16px; text-decoration: none; border-radius: 4px; display: inline-block; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RateMyPalika</title>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<div class="container">
-    <div class="header">
-        <h1>🇳🇵 Rate My Palika — Governance Transparency</h1>
-        <a href="submit_review.php" class="btn">+ Submit Palika Rating</a>
-    </div>
+    <nav class="navbar">
+        <a href="index.php" class="logo">RateMyPalika</a>
+        <ul class="nav-links">
+            <li><a href="#municipalities">Municipalities</a></li>
+            <li><a href="#compare">Compare</a></li>
+            <li><a href="#rankings">Rankings</a></li>
+            <li><a href="submit_review.php">Rate Now</a></li>
+        </ul>
+    </nav>
 
-    <h2>Municipal Performance Index</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Palika Name</th>
-                <th>District</th>
-                <th>Total Ratings</th>
-                <th>Roads</th>
-                <th>Waste</th>
-                <th>Health</th>
-                <th>Efficiency</th>
-                <th>Transparency</th>
-                <th>Overall Index</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($rankings as $row): ?>
+    <section class="hero-section">
+        <span class="badge-tag">NEPAL CIVIC TRANSPARENCY</span>
+        <h1 class="hero-title">
+            Measure.<br>
+            Compare.<br>
+            <span class="highlight">Improve.</span>
+        </h1>
+        <p class="hero-subtitle">
+            Explore municipality performance, public projects, budgets and citizen reports.
+        </p>
+        <a href="#municipalities" class="btn-primary">Explore Municipalities</a>
+    </section>
+
+    <section class="content-section" id="municipalities">
+        <h2>Municipal Performance Leaderboard</h2>
+        <table>
+            <thead>
                 <tr>
-                    <td><strong><?= htmlspecialchars($row['name']) ?></strong></td>
-                    <td><?= htmlspecialchars($row['district']) ?></td>
-                    <td><?= $row['total_reviews'] ?></td>
-                    <td><?= $row['avg_roads'] ?? '-' ?></td>
-                    <td><?= $row['avg_waste'] ?? '-' ?></td>
-                    <td><?= $row['avg_health'] ?? '-' ?></td>
-                    <td><?= $row['avg_efficiency'] ?? '-' ?></td>
-                    <td><?= $row['avg_transparency'] ?? '-' ?></td>
-                    <td>
-                        <span class="badge">
-                            <?= $row['avg_overall'] ? $row['avg_overall'] . ' / 5.0' : 'N/A' ?>
-                        </span>
-                    </td>
+                    <th>Palika Name</th>
+                    <th>District</th>
+                    <th>Ratings</th>
+                    <th>Roads</th>
+                    <th>Waste</th>
+                    <th>Health</th>
+                    <th>Efficiency</th>
+                    <th>Transparency</th>
+                    <th>Overall</th>
                 </tr>
-            <?php endforeach; ?>
-        </tbody>
-    </table>
-
-    <h2>Recent Citizen Feedback</h2>
-    <?php if (empty($recent_reviews)): ?>
-        <p>No ratings submitted yet.</p>
-    <?php else: ?>
-        <?php foreach ($recent_reviews as $rev): ?>
-            <div class="card">
-                <strong><?= htmlspecialchars($rev['palika_name']) ?> (Ward <?= $rev['ward_number'] ?>)</strong> 
-                — Score: <strong><?= $rev['overall_rating'] ?> / 5.0</strong>
-                <p><?= htmlspecialchars($rev['feedback_text'] ?: 'No additional feedback provided.') ?></p>
-                <small style="color: #6c757d;"><?= $rev['created_at'] ?></small>
-            </div>
-        <?php endforeach; ?>
-    <?php endif; ?>
-</div>
+            </thead>
+            <tbody>
+                <?php foreach ($rankings as $row): ?>
+                    <tr>
+                        <td><strong><?= htmlspecialchars($row['name']) ?></strong></td>
+                        <td><?= htmlspecialchars($row['district']) ?></td>
+                        <td><?= $row['total_reviews'] ?></td>
+                        <td><?= $row['avg_roads'] ?? '-' ?></td>
+                        <td><?= $row['avg_waste'] ?? '-' ?></td>
+                        <td><?= $row['avg_health'] ?? '-' ?></td>
+                        <td><?= $row['avg_efficiency'] ?? '-' ?></td>
+                        <td><?= $row['avg_transparency'] ?? '-' ?></td>
+                        <td>
+                            <span class="score-badge">
+                                <?= $row['avg_overall'] ? $row['avg_overall'] : 'N/A' ?>
+                            </span>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </section>
 
 </body>
 </html>
