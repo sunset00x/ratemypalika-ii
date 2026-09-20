@@ -79,8 +79,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
-$pending_palikas = $pdo->query("SELECT * FROM palikas WHERE status = 'pending' ORDER BY created_at DESC")->fetchAll();
-
 $search = trim($_GET['search'] ?? '');
 $province = trim($_GET['province'] ?? '');
 $type = trim($_GET['type'] ?? '');
@@ -106,6 +104,10 @@ $query .= " ORDER BY id DESC";
 $stmt = $pdo->prepare($query);
 $stmt->execute($params);
 $palikas = $stmt->fetchAll();
+
+$filtered_count = count($palikas);
+
+$pending_palikas = $pdo->query("SELECT * FROM palikas WHERE status = 'pending' ORDER BY created_at DESC")->fetchAll();
 
 $pending_reviews = $pdo->query("
     SELECT r.*, p.name AS palika_name 
@@ -250,8 +252,21 @@ $menu_items = [
             <?php endif; ?>
 
         <?php elseif ($section === 'palikas'): ?>
-            <h1 style="margin-bottom: 20px;">Municipalities Management</h1>
+            
+            <div class="directory-header" style="margin-bottom: 24px;">
+                <div>
+                    <span class="directory-badge">NEPAL CIVIC DIRECTORY</span>
+                    <h1 class="directory-title" style="font-size: 36px; margin-bottom: 6px;">Municipalities Management</h1>
+                    <p class="directory-subtitle">Search, filter, edit, or remove municipalities across Nepal.</p>
+                </div>
+                <div class="count-card">
+                    <div class="count-number"><?= $filtered_count ?></div>
+                    <div class="count-label">Municipalities</div>
+                </div>
+            </div>
+
             <div style="display: grid; grid-template-columns: 320px 1fr; gap: 30px;">
+                
                 <div class="form-container" style="margin:0; width:100%;">
                     <h3><?= $edit_item ? 'Edit Palika #' . $edit_item['id'] : 'Add New Palika' ?></h3>
                     <br>
@@ -291,10 +306,34 @@ $menu_items = [
                             <input type="number" name="total_wards" min="1" max="100" value="<?= htmlspecialchars($edit_item['total_wards'] ?? '1') ?>" required>
                         </div>
                         <button type="submit" class="btn-primary" style="width: 100%;"><?= $edit_item ? 'Update Palika' : 'Create Palika' ?></button>
+                        <?php if ($edit_item): ?>
+                            <a href="dashboard.php?section=palikas" style="display: block; text-align: center; margin-top: 10px; font-size: 13px; color: #6b7280; text-decoration: none;">Cancel Edit</a>
+                        <?php endif; ?>
                     </form>
                 </div>
 
                 <div>
+                    <form method="GET" action="dashboard.php" class="filter-bar" style="margin-bottom: 24px;">
+                        <input type="hidden" name="section" value="palikas">
+                        <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Search municipality or district..." onchange="this.form.submit()">
+
+                        <select name="province" class="filter-select" onchange="this.form.submit()">
+                            <option value="">All Provinces</option>
+                            <?php foreach ($provinces as $prov): ?>
+                                <option value="<?= $prov ?>" <?= $province === $prov ? 'selected' : '' ?>><?= $prov ?></option>
+                            <?php endforeach; ?>
+                        </select>
+
+                        <select name="type" class="filter-select" onchange="this.form.submit()">
+                            <option value="">All Types</option>
+                            <?php foreach ($types as $t): ?>
+                                <option value="<?= $t ?>" <?= $type === $t ? 'selected' : '' ?>><?= $t ?></option>
+                            <?php endforeach; ?>
+                        </select>
+
+                        <a href="dashboard.php?section=palikas" class="btn-clear">Reset</a>
+                    </form>
+
                     <?php if (!empty($pending_palikas)): ?>
                         <h2 style="margin-bottom: 12px; color: #d97706;">Pending User Requests (<?= count($pending_palikas) ?>)</h2>
                         <table style="margin-bottom: 30px;">
@@ -330,7 +369,7 @@ $menu_items = [
                         </table>
                     <?php endif; ?>
 
-                    <h2>Approved Municipalities Directory</h2>
+                    <h2>Registered Municipalities</h2>
                     <br>
                     <table>
                         <thead>
@@ -344,23 +383,29 @@ $menu_items = [
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach ($palikas as $p): ?>
+                            <?php if (empty($palikas)): ?>
                                 <tr>
-                                    <td>#<?= $p['id'] ?></td>
-                                    <td><strong><?= htmlspecialchars($p['name']) ?></strong></td>
-                                    <td><?= htmlspecialchars($p['district']) ?></td>
-                                    <td><?= htmlspecialchars($p['type']) ?></td>
-                                    <td><?= $p['total_wards'] ?></td>
-                                    <td style="display: flex; gap: 8px;">
-                                        <a href="dashboard.php?section=palikas&edit=<?= $p['id'] ?>" class="btn-action btn-edit">Edit</a>
-                                        <form method="POST" action="dashboard.php?section=palikas" onsubmit="return confirm('Delete Palika?');">
-                                            <input type="hidden" name="action" value="delete_palika">
-                                            <input type="hidden" name="palika_id" value="<?= $p['id'] ?>">
-                                            <button type="submit" class="btn-action btn-delete">Delete</button>
-                                        </form>
-                                    </td>
+                                    <td colspan="6" style="color: #6b7280; text-align: center;">No municipalities found matching your filters.</td>
                                 </tr>
-                            <?php endforeach; ?>
+                            <?php else: ?>
+                                <?php foreach ($palikas as $p): ?>
+                                    <tr>
+                                        <td>#<?= $p['id'] ?></td>
+                                        <td><strong><?= htmlspecialchars($p['name']) ?></strong></td>
+                                        <td><?= htmlspecialchars($p['district']) ?></td>
+                                        <td><?= htmlspecialchars($p['type']) ?></td>
+                                        <td><?= $p['total_wards'] ?></td>
+                                        <td style="display: flex; gap: 8px;">
+                                            <a href="dashboard.php?section=palikas&edit=<?= $p['id'] ?>" class="btn-action btn-edit">Edit</a>
+                                            <form method="POST" action="dashboard.php?section=palikas" onsubmit="return confirm('Delete Palika?');">
+                                                <input type="hidden" name="action" value="delete_palika">
+                                                <input type="hidden" name="palika_id" value="<?= $p['id'] ?>">
+                                                <button type="submit" class="btn-action btn-delete">Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
                         </tbody>
                     </table>
                 </div>
