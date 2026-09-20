@@ -9,11 +9,11 @@ $palikas = $pdo->query("SELECT * FROM palikas ORDER BY name ASC")->fetchAll();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $palika_id = (int)$_POST['palika_id'];
     $ward_number = (int)$_POST['ward_number'];
-    $road = (int)$_POST['road_infrastructure'];
-    $waste = (int)$_POST['waste_management'];
-    $health = (int)$_POST['health_services'];
-    $efficiency = (int)$_POST['bureaucratic_efficiency'];
-    $transparency = (int)$_POST['transparency_anti_corruption'];
+    $road = (int)($_POST['road_infrastructure'] ?? 3);
+    $waste = (int)($_POST['waste_management'] ?? 3);
+    $health = (int)($_POST['health_services'] ?? 3);
+    $efficiency = (int)($_POST['bureaucratic_efficiency'] ?? 3);
+    $transparency = (int)($_POST['transparency_anti_corruption'] ?? 3);
     $feedback = trim($_POST['feedback_text']);
     $ip_address = $_SERVER['REMOTE_ADDR'];
 
@@ -26,11 +26,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $overall = ($road + $waste + $health + $efficiency + $transparency) / 5.0;
 
         $insert = $pdo->prepare("INSERT INTO reviews 
-            (palika_id, ward_number, road_infrastructure, waste_management, health_services, bureaucratic_efficiency, transparency_anti_corruption, overall_rating, feedback_text, ip_address) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            (palika_id, ward_number, road_infrastructure, waste_management, health_services, bureaucratic_efficiency, transparency_anti_corruption, overall_rating, feedback_text, ip_address, status) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')");
         
         $insert->execute([$palika_id, $ward_number, $road, $waste, $health, $efficiency, $transparency, $overall, $feedback, $ip_address]);
-        $message = "Thank you! Your evaluation has been submitted.";
+        $message = "Thank you! Your civic evaluation has been submitted and is pending moderation.";
     }
 }
 ?>
@@ -42,22 +42,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Submit Rating - RateMyPalika</title>
     <link rel="stylesheet" href="css/style.css">
+    <script src="js/script.js" defer></script>
 </head>
 <body>
 
     <nav class="navbar">
         <a href="index.php" class="logo">RateMyPalika</a>
         <ul class="nav-links">
-            <li><a href="index.php#municipalities">Municipalities</a></li>
-            <li><a href="index.php#compare">Compare</a></li>
-            <li><a href="index.php#rankings">Rankings</a></li>
-            <li><a href="submit_review.php">Rate Now</a></li>
+            <li><a href="municipalities.php">Municipalities</a></li>
+            <li><a href="compare.php">Compare</a></li>
+            <li><a href="rankings.php">Rankings</a></li>
+            <li><a href="submit_review.php" class="active">Rate Now</a></li>
         </ul>
     </nav>
 
     <div class="form-container">
         <h2>Submit Civic Evaluation</h2>
-        <br>
+        <p style="color: #6b7280; font-size: 14px; margin-bottom: 20px;">Your feedback helps drive accountability across local ward operations.</p>
         
         <?php if ($message): ?><div class="alert success"><?= htmlspecialchars($message) ?></div><?php endif; ?>
         <?php if ($error): ?><div class="alert danger"><?= htmlspecialchars($error) ?></div><?php endif; ?>
@@ -65,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="POST" action="">
             <div class="form-group">
                 <label>Municipality (Palika)</label>
-                <select name="palika_id" required>
+                <select name="palika_id" id="palikaSelect" required>
                     <option value="">-- Select Palika --</option>
                     <?php foreach ($palikas as $p): ?>
                         <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['name']) ?> (<?= htmlspecialchars($p['district']) ?>)</option>
@@ -75,70 +76,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <div class="form-group">
                 <label>Ward Number</label>
-                <input type="number" name="ward_number" min="1" max="35" placeholder="e.g. 4" required>
-            </div>
-
-            <div class="form-group">
-                <label>Roads & Infrastructure</label>
-                <select name="road_infrastructure" required>
-                    <option value="5">5 - Excellent</option>
-                    <option value="4">4 - Good</option>
-                    <option value="3" selected>3 - Average</option>
-                    <option value="2">2 - Poor</option>
-                    <option value="1">1 - Very Poor</option>
+                <select name="ward_number" id="wardSelect" required>
+                    <option value="">-- Select Palika First --</option>
                 </select>
             </div>
 
-            <div class="form-group">
-                <label>Waste Management</label>
-                <select name="waste_management" required>
-                    <option value="5">5 - Excellent</option>
-                    <option value="4">4 - Good</option>
-                    <option value="3" selected>3 - Average</option>
-                    <option value="2">2 - Poor</option>
-                    <option value="1">1 - Very Poor</option>
-                </select>
-            </div>
+            <?php 
+            $categories = [
+                'road_infrastructure' => 'Roads & Infrastructure',
+                'waste_management' => 'Waste Management & Cleanliness',
+                'health_services' => 'Health Posts & Medical Services',
+                'bureaucratic_efficiency' => 'Bureaucratic Efficiency',
+                'transparency_anti_corruption' => 'Transparency & Anti-Corruption'
+            ];
+            foreach ($categories as $field => $label): 
+            ?>
+                <div class="form-group">
+                    <label><?= $label ?></label>
+                    <div class="star-rating">
+                        <?php for ($i = 5; $i >= 1; $i--): ?>
+                            <input type="radio" id="<?= $field . '_' . $i ?>" name="<?= $field ?>" value="<?= $i ?>" <?= $i === 3 ? 'checked' : '' ?>>
+                            <label for="<?= $field . '_' . $i ?>">★</label>
+                        <?php endfor; ?>
+                    </div>
+                </div>
+            <?php endforeach; ?>
 
             <div class="form-group">
-                <label>Health Services</label>
-                <select name="health_services" required>
-                    <option value="5">5 - Excellent</option>
-                    <option value="4">4 - Good</option>
-                    <option value="3" selected>3 - Average</option>
-                    <option value="2">2 - Poor</option>
-                    <option value="1">1 - Very Poor</option>
-                </select>
+                <label>Remarks & Specific Experience</label>
+                <textarea name="feedback_text" rows="4" placeholder="Detail your experience with municipal office responsiveness or public works..."></textarea>
             </div>
 
-            <div class="form-group">
-                <label>Bureaucratic Efficiency</label>
-                <select name="bureaucratic_efficiency" required>
-                    <option value="5">5 - Fast & Responsive</option>
-                    <option value="4">4 - Reasonable</option>
-                    <option value="3" selected>3 - Average</option>
-                    <option value="2">2 - Slow</option>
-                    <option value="1">1 - Extremely Delayed</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Transparency & Anti-Corruption</label>
-                <select name="transparency_anti_corruption" required>
-                    <option value="5">5 - Fully Transparent</option>
-                    <option value="4">4 - Mostly Transparent</option>
-                    <option value="3" selected>3 - Moderate</option>
-                    <option value="2">2 - Low Transparency</option>
-                    <option value="1">1 - High Corruption</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Feedback & Remarks</label>
-                <textarea name="feedback_text" rows="4" placeholder="Additional observations..."></textarea>
-            </div>
-
-            <button type="submit">Submit Evaluation</button>
+            <button type="submit" class="btn-primary" style="width: 100%;">Submit Rating</button>
         </form>
     </div>
 
