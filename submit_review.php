@@ -107,7 +107,7 @@ $rating_options = [
                     <label><?= $label ?> Rating</label>
                     <select name="<?= $field ?>" required>
                         <?php foreach ($rating_options as $display => $num_val): ?>
-                            <option value="<?= $num_val ?>" <?= $num_val == 3.0 ? 'selected' : '' ?>>
+                            <option value="<?= $num_val ?>" <?= $num_val == 1.0 ? 'selected' : '' ?>>
                                 <?= $display ?> / 5
                             </option>
                         <?php endforeach; ?>
