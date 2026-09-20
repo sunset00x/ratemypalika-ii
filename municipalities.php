@@ -33,20 +33,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
-if (isset($_GET['export']) && $_GET['export'] === 'csv') {
-    header('Content-Type: text/csv');
-    header('Content-Disposition: attachment; filename="palikas_directory.csv"');
-    $out = fopen('php://output', 'w');
-    fputcsv($out, ['ID', 'Name', 'District', 'Province', 'Type', 'Total Wards']);
-    
-    $rows = $pdo->query("SELECT id, name, district, province, type, total_wards FROM palikas WHERE status = 'approved' ORDER BY name ASC")->fetchAll();
-    foreach ($rows as $r) {
-        fputcsv($out, $r);
-    }
-    fclose($out);
-    exit;
-}
-
 $query = "
     SELECT 
         p.*,
@@ -100,6 +86,7 @@ $types = ['Metropolitan City', 'Sub-Metropolitan City', 'Municipality', 'Rural M
             <li><a href="municipalities.php" class="active">Municipalities</a></li>
             <li><a href="compare.php">Compare</a></li>
             <li><a href="rankings.php">Rankings</a></li>
+            <li><a href="submit_issue.php">Report Issue</a></li>
             <li><a href="submit_review.php">Rate Now</a></li>
         </ul>
     </nav>
@@ -116,7 +103,7 @@ $types = ['Metropolitan City', 'Sub-Metropolitan City', 'Municipality', 'Rural M
                 <p class="directory-subtitle">Explore municipalities across Nepal and view their public information, performance data, projects and budgets.</p>
             </div>
             <div style="display: flex; gap: 20px; align-items: center;">
-                <a href="municipalities.php?export=csv" class="btn-primary" style="background:#15803d;">Export CSV</a>
+                <a href="export_pdf.php" target="_blank" class="btn-primary" style="background:#15803d; text-decoration:none;">Export PDF</a>
                 <div class="count-card">
                     <div class="count-number"><?= $total_count ?></div>
                     <div class="count-label">Municipalities</div>

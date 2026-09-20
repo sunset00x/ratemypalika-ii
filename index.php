@@ -39,6 +39,7 @@ $rankings = $pdo->query($sql)->fetchAll();
             <li><a href="municipalities.php">Municipalities</a></li>
             <li><a href="compare.php">Compare</a></li>
             <li><a href="rankings.php">Rankings</a></li>
+            <li><a href="submit_issue.php">Report Issue</a></li>
             <li><a href="submit_review.php">Rate Now</a></li>
         </ul>
     </nav>
@@ -54,6 +55,8 @@ $rankings = $pdo->query($sql)->fetchAll();
             Explore municipality performance, public projects, budgets and citizen reports.
         </p>
         <a href="municipalities.php" class="btn-primary">Explore Municipalities</a>
+         </p>
+      
     </section>
 
 </body>

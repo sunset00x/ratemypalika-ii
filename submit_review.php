@@ -64,6 +64,7 @@ $rating_options = [
             <li><a href="municipalities.php">Municipalities</a></li>
             <li><a href="compare.php">Compare</a></li>
             <li><a href="rankings.php">Rankings</a></li>
+            <li><a href="submit_issue.php" >Report Issue</a></li>
             <li><a href="submit_review.php" class="active">Rate Now</a></li>
         </ul>
     </nav>

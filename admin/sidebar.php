@@ -12,6 +12,7 @@ $menu_items = [
     'dashboard.php'  => ['label' => 'Dashboard Overview', 'icon' => '📊'],
     'palikas.php'    => ['label' => 'Municipalities', 'icon' => '🏛️'],
     'wards.php'      => ['label' => 'Ward Management', 'icon' => '📍'],
+    'issues.php'     => ['label' => 'Citizen Issues', 'icon' => '🚨'],
     'reviews.php'    => ['label' => 'Review Moderation', 'icon' => '💬'],
     'analytics.php'  => ['label' => 'Analytics & Reports', 'icon' => '📈'],
     'officials.php'  => ['label' => 'Elected Officials', 'icon' => '👤'],

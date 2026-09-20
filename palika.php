@@ -110,6 +110,7 @@ $total_user_count = (int)$palika['total_reviews'];
             <li><a href="municipalities.php">Municipalities</a></li>
             <li><a href="compare.php">Compare</a></li>
             <li><a href="rankings.php">Rankings</a></li>
+            <li><a href="submit_issue.php" >Report Issue</a></li>
             <li><a href="submit_review.php">Rate Now</a></li>
         </ul>
     </nav>
