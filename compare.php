@@ -28,7 +28,7 @@ if (count($selected_ids) > 0 && count($selected_ids) < 2) {
             ROUND(AVG(r.bureaucratic_efficiency), 2) AS avg_efficiency,
             ROUND(AVG(r.transparency_anti_corruption), 2) AS avg_transparency
         FROM palikas p
-        LEFT JOIN reviews r ON p.id = r.palika_id
+        LEFT JOIN reviews r ON p.id = r.palika_id AND r.status = 'approved'
         WHERE p.id IN ($placeholders)
         GROUP BY p.id
     ";
@@ -36,6 +36,11 @@ if (count($selected_ids) > 0 && count($selected_ids) < 2) {
     $stmt = $pdo->prepare($sql);
     $stmt->execute($selected_ids);
     $compared_data = $stmt->fetchAll();
+}
+
+function getHighestScore($data, $key) {
+    $scores = array_column($data, $key);
+    return count($scores) ? max($scores) : 0;
 }
 ?>
 
@@ -46,6 +51,7 @@ if (count($selected_ids) > 0 && count($selected_ids) < 2) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Compare Municipalities - RateMyPalika</title>
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
 
@@ -53,29 +59,26 @@ if (count($selected_ids) > 0 && count($selected_ids) < 2) {
         <a href="index.php" class="logo">RateMyPalika</a>
         <ul class="nav-links">
             <li><a href="municipalities.php">Municipalities</a></li>
-            <li><a href="compare.php" style="color: #111827; font-weight: 600;">Compare</a></li>
-            <li><a href="index.php#rankings">Rankings</a></li>
+            <li><a href="compare.php" class="active">Compare</a></li>
+            <li><a href="rankings.php">Rankings</a></li>
             <li><a href="submit_review.php">Rate Now</a></li>
         </ul>
     </nav>
 
-    <div class="hero-section" style="padding-bottom: 40px;">
+    <div class="hero-section">
         <span class="badge-tag">CIVIC ANALYTICS</span>
-        <h1 class="hero-title" style="font-size: 56px; margin-bottom: 20px;">Compare Municipalities</h1>
-        <p class="hero-subtitle">Select between 2 and 4 municipalities to compare performance metrics side-by-side.</p>
+        <h1 class="hero-title" style="font-size: 52px; margin-bottom: 16px;">Compare Municipalities</h1>
+        <p class="hero-subtitle">Side-by-side metric evaluations across selected municipalities.</p>
 
-        <?php if ($error): ?>
-            <div class="alert danger"><?= htmlspecialchars($error) ?></div>
-        <?php endif; ?>
+        <?php if ($error): ?><div class="alert danger"><?= htmlspecialchars($error) ?></div><?php endif; ?>
 
-        <div class="compare-selector-card">
-            <h3>Select Palikas (Min: 2, Max: 4)</h3>
+        <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; margin-bottom: 30px;">
             <form method="GET" action="compare.php">
-                <div class="compare-grid-select">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
                     <?php for ($i = 0; $i < 4; $i++): ?>
                         <div>
                             <label style="font-size: 13px; color: #6b7280;">Municipality <?= $i + 1 ?></label>
-                            <select name="ids[]" class="filter-select" style="width: 100%;">
+                            <select name="ids[]" style="width: 100%;">
                                 <option value="">-- Choose Palika --</option>
                                 <?php foreach ($all_palikas as $palika): ?>
                                     <option value="<?= $palika['id'] ?>" <?= (isset($selected_ids[$i]) && $selected_ids[$i] == $palika['id']) ? 'selected' : '' ?>>
@@ -86,79 +89,88 @@ if (count($selected_ids) > 0 && count($selected_ids) < 2) {
                         </div>
                     <?php endfor; ?>
                 </div>
-                <button type="submit" class="btn-compare">Compare Selected</button>
+                <button type="submit" class="btn-primary" style="margin-top: 20px;">Compare Selected</button>
             </form>
         </div>
 
         <?php if (count($compared_data) >= 2): ?>
-            <table class="compare-table">
+            <div class="chart-box">
+                <canvas id="compareBarChart"></canvas>
+            </div>
+
+            <table>
                 <thead>
                     <tr>
-                        <th>Metric / Indicator</th>
+                        <th>Metric</th>
                         <?php foreach ($compared_data as $item): ?>
-                            <th>
-                                <?= htmlspecialchars($item['name']) ?>
-                                <span style="display:block; font-size: 12px; font-weight: 400; opacity: 0.8;"><?= htmlspecialchars($item['district']) ?>, <?= htmlspecialchars($item['province']) ?></span>
-                            </th>
+                            <th><?= htmlspecialchars($item['name']) ?></th>
                         <?php endforeach; ?>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>Overall Score</td>
-                        <?php foreach ($compared_data as $item): ?>
-                            <td>
-                                <span class="metric-score" style="color: #16a34a; font-size: 22px;"><?= $item['avg_overall'] ?: 'N/A' ?></span>
-                                <span class="metric-sub">out of 5.0</span>
-                            </td>
-                        <?php endforeach; ?>
-                    </tr>
-                    <tr>
-                        <td>Total Reviews Submitted</td>
-                        <?php foreach ($compared_data as $item): ?>
-                            <td><span class="metric-score"><?= $item['total_reviews'] ?></span></td>
-                        <?php endforeach; ?>
-                    </tr>
-                    <tr>
-                        <td>Total Wards</td>
-                        <?php foreach ($compared_data as $item): ?>
-                            <td><span class="metric-score"><?= $item['total_wards'] ?></span></td>
-                        <?php endforeach; ?>
-                    </tr>
-                    <tr>
-                        <td>Roads & Infrastructure</td>
-                        <?php foreach ($compared_data as $item): ?>
-                            <td><span class="metric-score"><?= $item['avg_roads'] ?: '-' ?></span></td>
-                        <?php endforeach; ?>
-                    </tr>
-                    <tr>
-                        <td>Waste Management</td>
-                        <?php foreach ($compared_data as $item): ?>
-                            <td><span class="metric-score"><?= $item['avg_waste'] ?: '-' ?></span></td>
-                        <?php endforeach; ?>
-                    </tr>
-                    <tr>
-                        <td>Health Services</td>
-                        <?php foreach ($compared_data as $item): ?>
-                            <td><span class="metric-score"><?= $item['avg_health'] ?: '-' ?></span></td>
-                        <?php endforeach; ?>
-                    </tr>
-                    <tr>
-                        <td>Bureaucratic Efficiency</td>
-                        <?php foreach ($compared_data as $item): ?>
-                            <td><span class="metric-score"><?= $item['avg_efficiency'] ?: '-' ?></span></td>
-                        <?php endforeach; ?>
-                    </tr>
-                    <tr>
-                        <td>Transparency & Anti-Corruption</td>
-                        <?php foreach ($compared_data as $item): ?>
-                            <td><span class="metric-score"><?= $item['avg_transparency'] ?: '-' ?></span></td>
-                        <?php endforeach; ?>
-                    </tr>
+                    <?php 
+                    $metrics = [
+                        'avg_overall' => 'Overall Score',
+                        'avg_roads' => 'Roads & Infrastructure',
+                        'avg_waste' => 'Waste Management',
+                        'avg_health' => 'Health Services',
+                        'avg_efficiency' => 'Bureaucratic Efficiency',
+                        'avg_transparency' => 'Transparency'
+                    ];
+
+                    foreach ($metrics as $key => $label): 
+                        $max = getHighestScore($compared_data, $key);
+                    ?>
+                        <tr>
+                            <td><strong><?= $label ?></strong></td>
+                            <?php foreach ($compared_data as $item): ?>
+                                <?php 
+                                    $val = $item[$key] ?: 0;
+                                    $is_winner = ($val == $max && $val > 0);
+                                ?>
+                                <td class="<?= $is_winner ? 'winning-metric' : '' ?>">
+                                    <?= $item[$key] ?: 'N/A' ?>
+                                    <?= $is_winner ? ' 🏆' : '' ?>
+                                </td>
+                            <?php endforeach; ?>
+                        </tr>
+                    <?php endforeach; ?>
                 </tbody>
             </table>
         <?php endif; ?>
     </div>
+
+    <?php if (count($compared_data) >= 2): ?>
+    <script>
+        const ctx = document.getElementById('compareBarChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Overall', 'Roads', 'Waste', 'Health', 'Efficiency', 'Transparency'],
+                datasets: [
+                    <?php foreach ($compared_data as $idx => $item): ?>
+                    {
+                        label: '<?= addslashes($item['name']) ?>',
+                        data: [
+                            <?= $item['avg_overall'] ?: 0 ?>,
+                            <?= $item['avg_roads'] ?: 0 ?>,
+                            <?= $item['avg_waste'] ?: 0 ?>,
+                            <?= $item['avg_health'] ?: 0 ?>,
+                            <?= $item['avg_efficiency'] ?: 0 ?>,
+                            <?= $item['avg_transparency'] ?: 0 ?>
+                        ],
+                        borderWidth: 1
+                    },
+                    <?php endforeach; ?>
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { min: 0, max: 5 } }
+            }
+        });
+    </script>
+    <?php endif; ?>
 
 </body>
 </html>
