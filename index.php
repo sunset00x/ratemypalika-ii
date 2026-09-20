@@ -36,7 +36,7 @@ $rankings = $pdo->query($sql)->fetchAll();
     <nav class="navbar">
         <a href="index.php" class="logo">RateMyPalika</a>
         <ul class="nav-links">
-            <li><a href="#municipalities">Municipalities</a></li>
+            <li><a href="municipalities.php">Municipalities</a></li>
             <li><a href="#compare">Compare</a></li>
             <li><a href="#rankings">Rankings</a></li>
             <li><a href="submit_review.php">Rate Now</a></li>
@@ -53,7 +53,7 @@ $rankings = $pdo->query($sql)->fetchAll();
         <p class="hero-subtitle">
             Explore municipality performance, public projects, budgets and citizen reports.
         </p>
-        <a href="#municipalities" class="btn-primary">Explore Municipalities</a>
+        <a href="municipalities.php" class="btn-primary">Explore Municipalities</a>
     </section>
 
     <section class="content-section" id="municipalities">
