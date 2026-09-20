@@ -4,16 +4,16 @@ require_once __DIR__ . '/config/db.php';
 $message = '';
 $error = '';
 
-$palikas = $pdo->query("SELECT * FROM palikas ORDER BY name ASC")->fetchAll();
+$palikas = $pdo->query("SELECT * FROM palikas WHERE status = 'approved' ORDER BY name ASC")->fetchAll();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $palika_id = (int)$_POST['palika_id'];
     $ward_number = (int)$_POST['ward_number'];
-    $road = (int)($_POST['road_infrastructure'] ?? 3);
-    $waste = (int)($_POST['waste_management'] ?? 3);
-    $health = (int)($_POST['health_services'] ?? 3);
-    $efficiency = (int)($_POST['bureaucratic_efficiency'] ?? 3);
-    $transparency = (int)($_POST['transparency_anti_corruption'] ?? 3);
+    $road = (float)($_POST['road_infrastructure'] ?? 3.0);
+    $waste = (float)($_POST['waste_management'] ?? 3.0);
+    $health = (float)($_POST['health_services'] ?? 3.0);
+    $efficiency = (float)($_POST['bureaucratic_efficiency'] ?? 3.0);
+    $transparency = (float)($_POST['transparency_anti_corruption'] ?? 3.0);
     $feedback = trim($_POST['feedback_text']);
     $ip_address = $_SERVER['REMOTE_ADDR'];
 
@@ -33,6 +33,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = "Thank you! Your civic evaluation has been submitted and is pending moderation.";
     }
 }
+
+$rating_options = [1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0];
 ?>
 
 <!DOCTYPE html>
@@ -92,13 +94,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             foreach ($categories as $field => $label): 
             ?>
                 <div class="form-group">
-                    <label><?= $label ?></label>
-                    <div class="star-rating">
-                        <?php for ($i = 5; $i >= 1; $i--): ?>
-                            <input type="radio" id="<?= $field . '_' . $i ?>" name="<?= $field ?>" value="<?= $i ?>" <?= $i === 3 ? 'checked' : '' ?>>
-                            <label for="<?= $field . '_' . $i ?>">★</label>
-                        <?php endfor; ?>
-                    </div>
+                    <label><?= $label ?> Rating (1.0 to 5.0)</label>
+                    <select name="<?= $field ?>" required>
+                        <?php foreach ($rating_options as $val): ?>
+                            <option value="<?= number_format($val, 1) ?>" <?= $val == 3.0 ? 'selected' : '' ?>>
+                                <?= number_format($val, 1) ?> / 5.0
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
                 </div>
             <?php endforeach; ?>
 

@@ -11,7 +11,17 @@ $section = $_GET['section'] ?? 'dashboard';
 $message = '';
 $error = '';
 
+$current_admin_username = $_SESSION['admin_username'];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    
+    if ($_POST['action'] === 'approve_palika') {
+        $p_id = (int)$_POST['palika_id'];
+        $stmt = $pdo->prepare("UPDATE palikas SET status = 'approved' WHERE id = ?");
+        $stmt->execute([$p_id]);
+        $message = "Municipality #$p_id approved and published live.";
+    }
+
     if ($_POST['action'] === 'approve_review') {
         $rev_id = (int)$_POST['review_id'];
         $stmt = $pdo->prepare("UPDATE reviews SET status = 'approved' WHERE id = ?");
@@ -34,9 +44,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $total_wards = (int)$_POST['total_wards'];
 
         if (!empty($name) && !empty($district) && !empty($province) && $total_wards > 0) {
-            $stmt = $pdo->prepare("INSERT INTO palikas (name, district, province, type, total_wards) VALUES (?, ?, ?, ?, ?)");
+            $stmt = $pdo->prepare("INSERT INTO palikas (name, district, province, type, total_wards, status) VALUES (?, ?, ?, ?, ?, 'approved')");
             $stmt->execute([$name, $district, $province, $type, $total_wards]);
-            $message = "New Palika added successfully.";
+            $message = "New Palika added and published.";
         } else {
             $error = "Please fill in all required fields.";
         }
@@ -69,11 +79,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
+$pending_palikas = $pdo->query("SELECT * FROM palikas WHERE status = 'pending' ORDER BY created_at DESC")->fetchAll();
+
 $search = trim($_GET['search'] ?? '');
 $province = trim($_GET['province'] ?? '');
 $type = trim($_GET['type'] ?? '');
 
-$query = "SELECT * FROM palikas WHERE 1=1";
+$query = "SELECT * FROM palikas WHERE status = 'approved'";
 $params = [];
 
 if ($search !== '') {
@@ -103,10 +115,10 @@ $pending_reviews = $pdo->query("
     ORDER BY r.created_at DESC
 ")->fetchAll();
 
-$total_palikas = $pdo->query("SELECT COUNT(*) FROM palikas")->fetchColumn();
+$total_palikas = $pdo->query("SELECT COUNT(*) FROM palikas WHERE status = 'approved'")->fetchColumn();
 $total_reviews = $pdo->query("SELECT COUNT(*) FROM reviews WHERE status = 'approved'")->fetchColumn();
 $pending_count = count($pending_reviews);
-$national_avg = $pdo->query("SELECT ROUND(AVG(overall_rating), 2) FROM reviews WHERE status = 'approved'")->fetchColumn() ?: '0.00';
+$pending_palika_count = count($pending_palikas);
 
 $edit_item = null;
 if (isset($_GET['edit'])) {
@@ -156,8 +168,8 @@ $menu_items = [
                         <a href="dashboard.php?section=<?= $key ?>" class="<?= $section === $key ? 'active' : '' ?>">
                             <span><?= $item['icon'] ?></span>
                             <span><?= $item['label'] ?></span>
-                            <?php if ($key === 'reviews' && $pending_count > 0): ?>
-                                <span style="background: #ef4444; color: white; font-size: 11px; padding: 2px 6px; border-radius: 10px; margin-left: auto;"><?= $pending_count ?></span>
+                            <?php if ($key === 'palikas' && $pending_palika_count > 0): ?>
+                                <span style="background: #f59e0b; color: white; font-size: 11px; padding: 2px 6px; border-radius: 10px; margin-left: auto;"><?= $pending_palika_count ?></span>
                             <?php endif; ?>
                         </a>
                     </li>
@@ -180,56 +192,54 @@ $menu_items = [
             <h1 style="margin-bottom: 20px;">System Overview</h1>
             <div class="stat-grid">
                 <div class="stat-card">
-                    <div class="label">Total Municipalities</div>
+                    <div class="label">Approved Municipalities</div>
                     <div class="num"><?= $total_palikas ?></div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Pending Palika Requests</div>
+                    <div class="num" style="color: #f59e0b;"><?= $pending_palika_count ?></div>
                 </div>
                 <div class="stat-card">
                     <div class="label">Approved Reviews</div>
                     <div class="num"><?= $total_reviews ?></div>
                 </div>
                 <div class="stat-card">
-                    <div class="label">Pending Moderation</div>
-                    <div class="num" style="color: #f59e0b;"><?= $pending_count ?></div>
-                </div>
-                <div class="stat-card">
-                    <div class="label">National Avg Rating</div>
-                    <div class="num" style="color: #16a34a;"><?= $national_avg ?></div>
+                    <div class="label">Pending Reviews</div>
+                    <div class="num" style="color: #ef4444;"><?= $pending_count ?></div>
                 </div>
             </div>
 
-            <h2>Recent Pending Reviews</h2>
-            <br>
-            <?php if (empty($pending_reviews)): ?>
-                <p style="color: #64748b;">No reviews currently awaiting moderation.</p>
-            <?php else: ?>
+            <?php if (!empty($pending_palikas)): ?>
+                <h2>Pending Municipality Creation Requests</h2>
+                <br>
                 <table>
                     <thead>
                         <tr>
-                            <th>ID</th>
-                            <th>Palika</th>
-                            <th>Ward</th>
-                            <th>Score</th>
-                            <th>Comment</th>
+                            <th>Name</th>
+                            <th>District</th>
+                            <th>Province</th>
+                            <th>Type</th>
+                            <th>Wards</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach (array_slice($pending_reviews, 0, 5) as $rev): ?>
+                        <?php foreach ($pending_palikas as $req): ?>
                             <tr>
-                                <td>#<?= $rev['id'] ?></td>
-                                <td><strong><?= htmlspecialchars($rev['palika_name']) ?></strong></td>
-                                <td>Ward <?= $rev['ward_number'] ?></td>
-                                <td><?= $rev['overall_rating'] ?></td>
-                                <td><?= htmlspecialchars($rev['feedback_text'] ?: 'No comment') ?></td>
+                                <td><strong><?= htmlspecialchars($req['name']) ?></strong></td>
+                                <td><?= htmlspecialchars($req['district']) ?></td>
+                                <td><?= htmlspecialchars($req['province']) ?></td>
+                                <td><?= htmlspecialchars($req['type']) ?></td>
+                                <td><?= $req['total_wards'] ?></td>
                                 <td style="display: flex; gap: 8px;">
                                     <form method="POST" action="dashboard.php?section=dashboard">
-                                        <input type="hidden" name="action" value="approve_review">
-                                        <input type="hidden" name="review_id" value="<?= $rev['id'] ?>">
-                                        <button type="submit" class="btn-primary" style="background: #16a34a; padding: 6px 12px; font-size: 12px;">Approve</button>
+                                        <input type="hidden" name="action" value="approve_palika">
+                                        <input type="hidden" name="palika_id" value="<?= $req['id'] ?>">
+                                        <button type="submit" class="btn-primary" style="background: #16a34a; padding: 6px 12px; font-size: 12px;">Approve & Publish</button>
                                     </form>
                                     <form method="POST" action="dashboard.php?section=dashboard">
-                                        <input type="hidden" name="action" value="reject_review">
-                                        <input type="hidden" name="review_id" value="<?= $rev['id'] ?>">
+                                        <input type="hidden" name="action" value="delete_palika">
+                                        <input type="hidden" name="palika_id" value="<?= $req['id'] ?>">
                                         <button type="submit" class="btn-primary" style="background: #dc2626; padding: 6px 12px; font-size: 12px;">Reject</button>
                                     </form>
                                 </td>
@@ -281,34 +291,47 @@ $menu_items = [
                             <input type="number" name="total_wards" min="1" max="100" value="<?= htmlspecialchars($edit_item['total_wards'] ?? '1') ?>" required>
                         </div>
                         <button type="submit" class="btn-primary" style="width: 100%;"><?= $edit_item ? 'Update Palika' : 'Create Palika' ?></button>
-                        <?php if ($edit_item): ?>
-                            <a href="dashboard.php?section=palikas" style="display: block; text-align: center; margin-top: 10px; font-size: 13px; color: #6b7280; text-decoration: none;">Cancel Edit</a>
-                        <?php endif; ?>
                     </form>
                 </div>
 
                 <div>
-                    <form method="GET" action="dashboard.php" class="filter-bar" style="margin-bottom: 20px;">
-                        <input type="hidden" name="section" value="palikas">
-                        <input type="text" name="search" value="<?= htmlspecialchars($search) ?>" placeholder="Search municipality or district..." onchange="this.form.submit()">
+                    <?php if (!empty($pending_palikas)): ?>
+                        <h2 style="margin-bottom: 12px; color: #d97706;">Pending User Requests (<?= count($pending_palikas) ?>)</h2>
+                        <table style="margin-bottom: 30px;">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>District</th>
+                                    <th>Type</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($pending_palikas as $req): ?>
+                                    <tr>
+                                        <td><strong><?= htmlspecialchars($req['name']) ?></strong></td>
+                                        <td><?= htmlspecialchars($req['district']) ?></td>
+                                        <td><?= htmlspecialchars($req['type']) ?></td>
+                                        <td style="display: flex; gap: 8px;">
+                                            <form method="POST" action="dashboard.php?section=palikas">
+                                                <input type="hidden" name="action" value="approve_palika">
+                                                <input type="hidden" name="palika_id" value="<?= $req['id'] ?>">
+                                                <button type="submit" class="btn-primary" style="background: #16a34a; padding: 6px 12px; font-size: 12px;">Approve</button>
+                                            </form>
+                                            <form method="POST" action="dashboard.php?section=palikas">
+                                                <input type="hidden" name="action" value="delete_palika">
+                                                <input type="hidden" name="palika_id" value="<?= $req['id'] ?>">
+                                                <button type="submit" class="btn-primary" style="background: #dc2626; padding: 6px 12px; font-size: 12px;">Reject</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    <?php endif; ?>
 
-                        <select name="province" class="filter-select" onchange="this.form.submit()">
-                            <option value="">All Provinces</option>
-                            <?php foreach ($provinces as $prov): ?>
-                                <option value="<?= $prov ?>" <?= $province === $prov ? 'selected' : '' ?>><?= $prov ?></option>
-                            <?php endforeach; ?>
-                        </select>
-
-                        <select name="type" class="filter-select" onchange="this.form.submit()">
-                            <option value="">All Types</option>
-                            <?php foreach ($types as $t): ?>
-                                <option value="<?= $t ?>" <?= $type === $t ? 'selected' : '' ?>><?= $t ?></option>
-                            <?php endforeach; ?>
-                        </select>
-
-                        <a href="dashboard.php?section=palikas" class="btn-clear">Reset</a>
-                    </form>
-
+                    <h2>Approved Municipalities Directory</h2>
+                    <br>
                     <table>
                         <thead>
                             <tr>
@@ -330,7 +353,7 @@ $menu_items = [
                                     <td><?= $p['total_wards'] ?></td>
                                     <td style="display: flex; gap: 8px;">
                                         <a href="dashboard.php?section=palikas&edit=<?= $p['id'] ?>" class="btn-action btn-edit">Edit</a>
-                                        <form method="POST" action="dashboard.php?section=palikas" onsubmit="return confirm('Are you sure you want to delete <?= htmlspecialchars(addslashes($p['name'])) ?>?');">
+                                        <form method="POST" action="dashboard.php?section=palikas" onsubmit="return confirm('Delete Palika?');">
                                             <input type="hidden" name="action" value="delete_palika">
                                             <input type="hidden" name="palika_id" value="<?= $p['id'] ?>">
                                             <button type="submit" class="btn-action btn-delete">Delete</button>
@@ -343,51 +366,9 @@ $menu_items = [
                 </div>
             </div>
 
-        <?php elseif ($section === 'reviews'): ?>
-            <h1 style="margin-bottom: 20px;">Review Moderation Queue</h1>
-            <?php if (empty($pending_reviews)): ?>
-                <p style="color: #64748b;">No pending submissions in queue.</p>
-            <?php else: ?>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Palika</th>
-                            <th>Ward</th>
-                            <th>Overall</th>
-                            <th>Feedback</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php foreach ($pending_reviews as $rev): ?>
-                            <tr>
-                                <td>#<?= $rev['id'] ?></td>
-                                <td><strong><?= htmlspecialchars($rev['palika_name']) ?></strong></td>
-                                <td>Ward <?= $rev['ward_number'] ?></td>
-                                <td><?= $rev['overall_rating'] ?></td>
-                                <td><?= htmlspecialchars($rev['feedback_text'] ?: 'No comment') ?></td>
-                                <td style="display: flex; gap: 8px;">
-                                    <form method="POST" action="dashboard.php?section=reviews">
-                                        <input type="hidden" name="action" value="approve_review">
-                                        <input type="hidden" name="review_id" value="<?= $rev['id'] ?>">
-                                        <button type="submit" class="btn-primary" style="background: #16a34a; padding: 6px 12px; font-size: 12px;">Approve</button>
-                                    </form>
-                                    <form method="POST" action="dashboard.php?section=reviews">
-                                        <input type="hidden" name="action" value="reject_review">
-                                        <input type="hidden" name="review_id" value="<?= $rev['id'] ?>">
-                                        <button type="submit" class="btn-primary" style="background: #dc2626; padding: 6px 12px; font-size: 12px;">Reject</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    </tbody>
-                </table>
-            <?php endif; ?>
-
         <?php else: ?>
             <h1 style="margin-bottom: 12px;"><?= htmlspecialchars($menu_items[$section]['label'] ?? 'Module') ?></h1>
-            <p style="color: #64748b;">This section is configured and ready for expansion. Module ID: <code><?= htmlspecialchars($section) ?></code>.</p>
+            <p style="color: #64748b;">Module section active: <code><?= htmlspecialchars($section) ?></code>.</p>
         <?php endif; ?>
 
     </main>

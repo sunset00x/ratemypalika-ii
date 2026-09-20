@@ -34,6 +34,14 @@ if (!$palika) {
 $rev_stmt = $pdo->prepare("SELECT * FROM reviews WHERE palika_id = ? AND status = 'approved' ORDER BY created_at DESC");
 $rev_stmt->execute([$id]);
 $reviews = $rev_stmt->fetchAll();
+
+$categories = [
+    'Roads & Infrastructure' => $palika['avg_roads'] ?: '0.00',
+    'Waste Management & Cleanliness' => $palika['avg_waste'] ?: '0.00',
+    'Health Posts & Medical Services' => $palika['avg_health'] ?: '0.00',
+    'Bureaucratic Efficiency' => $palika['avg_efficiency'] ?: '0.00',
+    'Transparency & Anti-Corruption' => $palika['avg_transparency'] ?: '0.00',
+];
 ?>
 
 <!DOCTYPE html>
@@ -43,7 +51,49 @@ $reviews = $rev_stmt->fetchAll();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= htmlspecialchars($palika['name']) ?> - Details</title>
     <link rel="stylesheet" href="css/style.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .category-score-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 30px;
+        }
+        .category-row {
+            margin-bottom: 20px;
+        }
+        .category-row:last-child {
+            margin-bottom: 0;
+        }
+        .category-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .category-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .category-value {
+            font-size: 16px;
+            font-weight: 800;
+            color: #16a34a;
+        }
+        .progress-bar-bg {
+            width: 100%;
+            height: 10px;
+            background: #f1f5f9;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: #22c55e;
+            border-radius: 6px;
+        }
+    </style>
 </head>
 <body>
 
@@ -62,11 +112,23 @@ $reviews = $rev_stmt->fetchAll();
         <h1 class="hero-title" style="font-size: 52px; margin-bottom: 8px;"><?= htmlspecialchars($palika['name']) ?></h1>
         <p class="hero-subtitle"><?= htmlspecialchars($palika['district']) ?> District • <?= $palika['total_wards'] ?> Total Wards</p>
 
-        <div style="display: grid; grid-template-columns: 1fr 300px; gap: 40px; margin-top: 40px;">
+        <div style="display: grid; grid-template-columns: 1fr 320px; gap: 40px; margin-top: 40px;">
             <div>
-                <div class="chart-box">
-                    <h3>Category Performance Radar</h3>
-                    <canvas id="radarChart"></canvas>
+                <div class="category-score-card">
+                    <h3 style="margin-bottom: 24px; font-size: 20px; color: #0f172a;">Field Ratings Summary</h3>
+                    
+                    <?php foreach ($categories as $label => $score): ?>
+                        <?php $percentage = min(100, max(0, ($score / 5.0) * 100)); ?>
+                        <div class="category-row">
+                            <div class="category-header">
+                                <span class="category-name"><?= $label ?></span>
+                                <span class="category-value"><?= number_format((float)$score, 2) ?> / 5.0</span>
+                            </div>
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill" style="width: <?= $percentage ?>%;"></div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
                 </div>
 
                 <h2>Citizen Reviews (<?= count($reviews) ?>)</h2>
@@ -78,7 +140,7 @@ $reviews = $rev_stmt->fetchAll();
                         <div style="background: #fff; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 16px;">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                 <strong>Ward <?= $r['ward_number'] ?></strong>
-                                <span class="score-badge"><?= $r['overall_rating'] ?> / 5.0</span>
+                                <span class="score-badge"><?= number_format((float)$r['overall_rating'], 2) ?> / 5.0</span>
                             </div>
                             <p style="font-size: 14px; color: #374151;"><?= htmlspecialchars($r['feedback_text'] ?: 'No comments provided.') ?></p>
                             <small style="color: #9ca3af; display: block; margin-top: 8px;"><?= $r['created_at'] ?></small>
@@ -88,43 +150,15 @@ $reviews = $rev_stmt->fetchAll();
             </div>
 
             <div>
-                <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px;">
+                <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; position: sticky; top: 20px;">
                     <h3>Overall Score</h3>
-                    <div style="font-size: 48px; font-weight: 900; color: #16a34a; margin: 10px 0;"><?= $palika['avg_overall'] ?: 'N/A' ?></div>
+                    <div style="font-size: 48px; font-weight: 900; color: #16a34a; margin: 10px 0;"><?= $palika['avg_overall'] ? sprintf("%.2f", $palika['avg_overall']) : 'N/A' ?></div>
                     <p style="font-size: 13px; color: #6b7280; margin-bottom: 20px;">Based on <?= $palika['total_reviews'] ?> total submissions</p>
                     <a href="submit_review.php" class="btn-primary" style="display: block; text-align: center;">Rate This Palika</a>
                 </div>
             </div>
         </div>
     </div>
-
-    <script>
-        const ctx = document.getElementById('radarChart').getContext('2d');
-        new Chart(ctx, {
-            type: 'radar',
-            data: {
-                labels: ['Roads', 'Waste', 'Health', 'Efficiency', 'Transparency'],
-                datasets: [{
-                    label: 'Score (out of 5)',
-                    data: [
-                        <?= $palika['avg_roads'] ?: 0 ?>,
-                        <?= $palika['avg_waste'] ?: 0 ?>,
-                        <?= $palika['avg_health'] ?: 0 ?>,
-                        <?= $palika['avg_efficiency'] ?: 0 ?>,
-                        <?= $palika['avg_transparency'] ?: 0 ?>
-                    ],
-                    backgroundColor: 'rgba(34, 197, 94, 0.2)',
-                    borderColor: '#22c55e',
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                scales: {
-                    r: { min: 0, max: 5 }
-                }
-            }
-        });
-    </script>
 
 </body>
 </html>
