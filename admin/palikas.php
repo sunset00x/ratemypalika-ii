@@ -87,6 +87,20 @@ $stmt = $pdo->prepare($query);
 $stmt->execute($params);
 $palikas = $stmt->fetchAll();
 
+$metro_count = 0;
+$sub_metro_count = 0;
+$muni_count = 0;
+$rural_count = 0;
+
+foreach ($palikas as $p) {
+    if ($p['type'] === 'Metropolitan City') $metro_count++;
+    elseif ($p['type'] === 'Sub-Metropolitan City') $sub_metro_count++;
+    elseif ($p['type'] === 'Municipality') $muni_count++;
+    elseif ($p['type'] === 'Rural Municipality') $rural_count++;
+}
+
+$total_filtered = count($palikas);
+
 $pending_palikas = $pdo->query("SELECT * FROM palikas WHERE status = 'pending' ORDER BY created_at DESC")->fetchAll();
 
 $provinces = ['Koshi', 'Madhesh', 'Bagmati', 'Gandaki', 'Lumbini', 'Karnali', 'Sudurpashchim'];
@@ -118,6 +132,29 @@ if (isset($_GET['edit'])) {
 
         <?php if ($message): ?><div class="alert success"><?= htmlspecialchars($message) ?></div><?php endif; ?>
         <?php if ($error): ?><div class="alert danger"><?= htmlspecialchars($error) ?></div><?php endif; ?>
+
+        <div class="stat-grid" style="margin-bottom: 24px;">
+            <div class="stat-card">
+                <div class="label">Total Listed</div>
+                <div class="num"><?= $total_filtered ?></div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Metropolitan Cities</div>
+                <div class="num" style="color: #2563eb;"><?= $metro_count ?></div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Sub-Metropolitans</div>
+                <div class="num" style="color: #0284c7;"><?= $sub_metro_count ?></div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Municipalities</div>
+                <div class="num" style="color: #16a34a;"><?= $muni_count ?></div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Rural Municipalities</div>
+                <div class="num" style="color: #d97706;"><?= $rural_count ?></div>
+            </div>
+        </div>
 
         <div style="display: grid; grid-template-columns: 320px 1fr; gap: 30px;">
             <div class="form-container" style="margin:0; width:100%;">
@@ -159,6 +196,9 @@ if (isset($_GET['edit'])) {
                         <input type="number" name="total_wards" min="1" max="100" value="<?= htmlspecialchars($edit_item['total_wards'] ?? '1') ?>" required>
                     </div>
                     <button type="submit" class="btn-primary" style="width: 100%;"><?= $edit_item ? 'Update Palika' : 'Create Palika' ?></button>
+                    <?php if ($edit_item): ?>
+                        <a href="palikas.php" style="display: block; text-align: center; margin-top: 10px; font-size: 13px; color: #6b7280; text-decoration: none;">Cancel Edit</a>
+                    <?php endif; ?>
                 </form>
             </div>
 
@@ -183,6 +223,41 @@ if (isset($_GET['edit'])) {
                     <a href="palikas.php" class="btn-clear">Reset</a>
                 </form>
 
+                <?php if (!empty($pending_palikas)): ?>
+                    <h2 style="margin-bottom: 12px; color: #d97706;">Pending User Requests (<?= count($pending_palikas) ?>)</h2>
+                    <table style="margin-bottom: 30px;">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>District</th>
+                                <th>Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($pending_palikas as $req): ?>
+                                <tr>
+                                    <td><strong><?= htmlspecialchars($req['name']) ?></strong></td>
+                                    <td><?= htmlspecialchars($req['district']) ?></td>
+                                    <td><?= htmlspecialchars($req['type']) ?></td>
+                                    <td style="display: flex; gap: 8px;">
+                                        <form method="POST" action="palikas.php">
+                                            <input type="hidden" name="action" value="approve_palika">
+                                            <input type="hidden" name="palika_id" value="<?= $req['id'] ?>">
+                                            <button type="submit" class="btn-primary" style="background: #16a34a; padding: 6px 12px; font-size: 12px;">Approve</button>
+                                        </form>
+                                        <form method="POST" action="palikas.php">
+                                            <input type="hidden" name="action" value="delete_palika">
+                                            <input type="hidden" name="palika_id" value="<?= $req['id'] ?>">
+                                            <button type="submit" class="btn-primary" style="background: #dc2626; padding: 6px 12px; font-size: 12px;">Reject</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                <?php endif; ?>
+
                 <table>
                     <thead>
                         <tr>
@@ -195,23 +270,29 @@ if (isset($_GET['edit'])) {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($palikas as $p): ?>
+                        <?php if (empty($palikas)): ?>
                             <tr>
-                                <td>#<?= $p['id'] ?></td>
-                                <td><strong><?= htmlspecialchars($p['name']) ?></strong></td>
-                                <td><?= htmlspecialchars($p['district']) ?></td>
-                                <td><?= htmlspecialchars($p['type']) ?></td>
-                                <td><?= $p['total_wards'] ?></td>
-                                <td style="display: flex; gap: 8px;">
-                                    <a href="palikas.php?edit=<?= $p['id'] ?>" class="btn-action btn-edit">Edit</a>
-                                    <form method="POST" action="palikas.php" onsubmit="return confirm('Delete Palika?');">
-                                        <input type="hidden" name="action" value="delete_palika">
-                                        <input type="hidden" name="palika_id" value="<?= $p['id'] ?>">
-                                        <button type="submit" class="btn-action btn-delete">Delete</button>
-                                    </form>
-                                </td>
+                                <td colspan="6" style="color: #6b7280; text-align: center;">No municipalities found matching criteria.</td>
                             </tr>
-                        <?php endforeach; ?>
+                        <?php else: ?>
+                            <?php foreach ($palikas as $p): ?>
+                                <tr>
+                                    <td>#<?= $p['id'] ?></td>
+                                    <td><strong><?= htmlspecialchars($p['name']) ?></strong></td>
+                                    <td><?= htmlspecialchars($p['district']) ?></td>
+                                    <td><?= htmlspecialchars($p['type']) ?></td>
+                                    <td><?= $p['total_wards'] ?></td>
+                                    <td style="display: flex; gap: 8px;">
+                                        <a href="palikas.php?edit=<?= $p['id'] ?>" class="btn-action btn-edit">Edit</a>
+                                        <form method="POST" action="palikas.php" onsubmit="return confirm('Delete Palika?');">
+                                            <input type="hidden" name="action" value="delete_palika">
+                                            <input type="hidden" name="palika_id" value="<?= $p['id'] ?>">
+                                            <button type="submit" class="btn-action btn-delete">Delete</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
