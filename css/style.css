@@ -200,3 +200,171 @@ button[type="submit"]:hover {
         font-size: 56px;
     }
 }
+
+.directory-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 30px;
+}
+
+.directory-badge {
+    color: #2563eb;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: block;
+}
+
+.directory-title {
+    font-size: 48px;
+    font-weight: 900;
+    color: #0f172a;
+    letter-spacing: -1.5px;
+    margin-bottom: 12px;
+}
+
+.directory-subtitle {
+    font-size: 16px;
+    color: #6b7280;
+    max-width: 550px;
+}
+
+.count-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px 32px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.count-number {
+    font-size: 36px;
+    font-weight: 900;
+    color: #1d4ed8;
+    line-height: 1;
+}
+
+.count-label {
+    font-size: 13px;
+    color: #6b7280;
+    margin-top: 6px;
+    font-weight: 500;
+}
+
+.filter-bar {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 30px;
+}
+
+.search-box {
+    position: relative;
+    flex: 1;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 12px 16px 12px 40px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 15px;
+    outline: none;
+    background: #ffffff;
+}
+
+.search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    font-size: 16px;
+}
+
+.filter-select {
+    padding: 12px 16px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 15px;
+    background: #ffffff;
+    color: #1f2937;
+    cursor: pointer;
+    min-width: 160px;
+}
+
+.btn-clear {
+    padding: 12px 24px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #4b5563;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-clear:hover {
+    background: #f9fafb;
+}
+
+.palika-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 20px;
+}
+
+.palika-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 20px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.palika-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.palika-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+}
+
+.palika-card-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.palika-type-badge {
+    font-size: 12px;
+    background: #f1f5f9;
+    color: #475569;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.palika-location {
+    font-size: 14px;
+    color: #6b7280;
+    margin-bottom: 16px;
+}
+
+.palika-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #f1f5f9;
+    padding-top: 12px;
+}
