@@ -42,6 +42,8 @@ $categories = [
     'Bureaucratic Efficiency' => $palika['avg_efficiency'] ?: '0.00',
     'Transparency & Anti-Corruption' => $palika['avg_transparency'] ?: '0.00',
 ];
+
+$total_user_count = (int)$palika['total_reviews'];
 ?>
 
 <!DOCTYPE html>
@@ -77,9 +79,14 @@ $categories = [
             color: #1e293b;
         }
         .category-value {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 800;
             color: #16a34a;
+        }
+        .category-count {
+            font-size: 13px;
+            font-weight: 400;
+            color: #64748b;
         }
         .progress-bar-bg {
             width: 100%;
@@ -122,7 +129,10 @@ $categories = [
                         <div class="category-row">
                             <div class="category-header">
                                 <span class="category-name"><?= $label ?></span>
-                                <span class="category-value"><?= number_format((float)$score, 2) ?> / 5.0</span>
+                                <span class="category-value">
+                                    <?= number_format((float)$score, 2) ?> / 5.0
+                                    <span class="category-count">(based on <?= $total_user_count ?> <?= $total_user_count === 1 ? 'user' : 'users' ?>)</span>
+                                </span>
                             </div>
                             <div class="progress-bar-bg">
                                 <div class="progress-bar-fill" style="width: <?= $percentage ?>%;"></div>
@@ -153,7 +163,7 @@ $categories = [
                 <div style="background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 24px; position: sticky; top: 20px;">
                     <h3>Overall Score</h3>
                     <div style="font-size: 48px; font-weight: 900; color: #16a34a; margin: 10px 0;"><?= $palika['avg_overall'] ? sprintf("%.2f", $palika['avg_overall']) : 'N/A' ?></div>
-                    <p style="font-size: 13px; color: #6b7280; margin-bottom: 20px;">Based on <?= $palika['total_reviews'] ?> total submissions</p>
+                    <p style="font-size: 13px; color: #6b7280; margin-bottom: 20px;">Based on <?= $total_user_count ?> total user <?= $total_user_count === 1 ? 'submission' : 'submissions' ?></p>
                     <a href="submit_review.php" class="btn-primary" style="display: block; text-align: center;">Rate This Palika</a>
                 </div>
             </div>
