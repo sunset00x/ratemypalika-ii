@@ -59,7 +59,7 @@ $types = ['Metropolitan City', 'Sub-Metropolitan City', 'Municipality', 'Rural M
         <a href="index.php" class="logo">RateMyPalika</a>
         <ul class="nav-links">
             <li><a href="municipalities.php" style="color: #111827; font-weight: 600;">Municipalities</a></li>
-            <li><a href="index.php#compare">Compare</a></li>
+            <li><a href="compare.php">Compare</a></li>
             <li><a href="index.php#rankings">Rankings</a></li>
             <li><a href="submit_review.php">Rate Now</a></li>
         </ul>
