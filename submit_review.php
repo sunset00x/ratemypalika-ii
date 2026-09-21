@@ -77,15 +77,15 @@ $rating_options = [
         <?php if ($error): ?><div class="alert danger"><?= htmlspecialchars($error) ?></div><?php endif; ?>
 
         <form method="POST" action="">
-         <div class="form-group">
-    <label>Select Municipality</label>
-    <select name="palika_id" id="palikaSelect" class="searchable-select" required>
-        <option value="">-- Search or Select Palika --</option>
-        <?php foreach ($palikas as $p): ?>
-            <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['name']) ?> (<?= htmlspecialchars($p['district']) ?>)</option>
-        <?php endforeach; ?>
-    </select>
-</div>
+            <div class="form-group">
+                <label>Municipality (Palika)</label>
+                <select name="palika_id" id="palikaSelect" required>
+                    <option value="">-- Select Palika --</option>
+                    <?php foreach ($palikas as $p): ?>
+                        <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['name']) ?> (<?= htmlspecialchars($p['district']) ?>)</option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
 
             <div class="form-group">
                 <label>Ward Number</label>
@@ -125,24 +125,5 @@ $rating_options = [
         </form>
     </div>
 
-
-
-    <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const palikaSelects = document.querySelectorAll('select[name="palika_id"], select#palikaSelect, .searchable-select');
-    
-    palikaSelects.forEach(function(selectEl) {
-        new TomSelect(selectEl, {
-            create: false,
-            sortField: {
-                field: "text",
-                direction: "asc"
-            },
-            plugins: ['dropdown_input'], // Injects live search input at the top of the dropdown
-            placeholder: "Search municipality or district..."
-        });
-    });
-});
-</script>
 </body>
 </html>
