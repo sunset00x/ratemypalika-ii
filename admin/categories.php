@@ -1,6 +1,7 @@
 <?php
 session_start();
-if (!isset($_SESSION['admin_logged_in']) \vert{}\vert{}$_SESSION['admin_logged_in'] !== true) {
+if (!isset($_SESSION['admin_logged_in']) || $_SESSION['admin_logged_in'] !== true) {
+   
     header('Location: login.php');
     exit;
 }
@@ -11,7 +12,6 @@ $message = '';$error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     
-    // 1. Add New Category
     if ($_POST['action'] === 'add_category') {
         $category_key = strtolower(trim($_POST['category_key']));
         $category_key = preg_replace('/[^a-z0-9_]/', '_',$category_key);
@@ -41,7 +41,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         }
     }
 
-    // 2. Update Existing Category
     if ($_POST['action'] === 'update_category') {
         $cat_id = (int)$_POST['category_id'];
         $display_name = trim($_POST['display_name']);
@@ -58,7 +57,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         }
     }
 
-    // 3. Update All Weightages
     if ($_POST['action'] === 'update_all_weights') {
         foreach ($_POST['weight'] as $cat_id =>$val) {
             $w = (float)$val;
@@ -68,7 +66,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $message = "Scoring weightages updated successfully.";
     }
 
-    // 4. Delete Category
     if ($_POST['action'] === 'delete_category') {
         $cat_id = (int)$_POST['category_id'];
         if ($cat_id > 0) {
