@@ -9,13 +9,11 @@ require_once __DIR__ . '/../config/db.php';
 
 $message = '';$error = '';
 
-// Handle Actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     
-    // 1. Add New Category
     if ($_POST['action'] === 'add_category') {
         $category_key = strtolower(trim($_POST['category_key']));
-        $category_key = preg_replace('/[^a-z0-9_]/', '_',$category_key); // sanitize key format
+        $category_key = preg_replace('/[^a-z0-9_]/', '_',$category_key);
         $display_name = trim($_POST['display_name']);
         $description = trim($_POST['description']);
         $weightage = (float)$_POST['weightage'];
@@ -29,11 +27,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $insert =$pdo->prepare("INSERT INTO scoring_categories (category_key, display_name, description, weightage, is_active) VALUES (?, ?, ?, ?, 1)");
                 $insert->execute([$category_key,$display_name, $description,$weightage]);
 
-                // Dynamically add column to reviews table if it doesn't exist
                 try {
                     $pdo->exec("ALTER TABLE reviews ADD COLUMN `$category_key` DECIMAL(3,2) DEFAULT 3.00");
                 } catch (PDOException $e) {
-                    // Column may already exist
+                    // Column already exists
                 }
 
                 $message = "New category '$display_name' added successfully.";
@@ -43,7 +40,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         }
     }
 
-    // 2. Update Existing Category Details
     if ($_POST['action'] === 'update_category') {
         $cat_id = (int)$_POST['category_id'];
         $display_name = trim($_POST['display_name']);
@@ -60,7 +56,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         }
     }
 
-    // 3. Quick Bulk Weightage Updates
     if ($_POST['action'] === 'update_all_weights') {
         foreach ($_POST['weight'] as $cat_id =>$val) {
             $w = (float)$val;
@@ -70,7 +65,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $message = "Scoring weightages updated successfully.";
     }
 
-    // 4. Delete Category
     if ($_POST['action'] === 'delete_category') {
         $cat_id = (int)$_POST['category_id'];
         if ($cat_id > 0) {
@@ -81,7 +75,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     }
 }
 
-// Fetch item for edit mode
 $edit_item = null;
 if (isset($_GET['edit'])) {
     $edit_id = (int)$_GET['edit'];
@@ -113,7 +106,6 @@ $categories =$pdo->query("SELECT * FROM scoring_categories ORDER BY id ASC")->fe
 
         <div style="display: grid; grid-template-columns: 340px 1fr; gap: 30px;">
             
-            <!-- Left Column: Add / Edit Form -->
             <div class="form-container" style="margin: 0; width: 100%;">
                 <h3><?= $edit_item ? 'Edit Category #' . $edit_item['id'] : 'Add New Category' ?></h3>
                 <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">
@@ -163,7 +155,6 @@ $categories =$pdo->query("SELECT * FROM scoring_categories ORDER BY id ASC")->fe
                 </form>
             </div>
 
-            <!-- Right Column: Active Categories List -->
             <div>
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                     <h2>Active Rating Categories (<?= count($categories) ?>)</h2>
