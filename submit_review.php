@@ -185,3 +185,5 @@ $rating_options = [
         });
     </script>
 
+</body>
+</html>
