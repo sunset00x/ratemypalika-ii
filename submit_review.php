@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $health = (float)($_POST['health_services'] ?? 3.0);
     $efficiency = (float)($_POST['bureaucratic_efficiency'] ?? 3.0);
     $transparency = (float)($_POST['transparency_anti_corruption'] ?? 3.0);
-    $feedback = trim($_POST['feedback_text']);
+    $feedback = trim($_POST['feedback_text'] ?? '');
     $ip_address = $_SERVER['REMOTE_ADDR'];
 
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM reviews WHERE ip_address = ? AND palika_id = ? AND created_at > NOW() - INTERVAL 1 DAY");
@@ -54,7 +54,29 @@ $rating_options = [
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Submit Rating - RateMyPalika</title>
     <link rel="stylesheet" href="css/style.css">
+
+    <!-- Tom Select Assets for Searchable Municipalities -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
     <script src="js/script.js" defer></script>
+
+    <style>
+        .ts-control {
+            border-radius: 8px !important;
+            padding: 10px 14px !important;
+            border: 1px solid #cbd5e1 !important;
+            font-size: 14px !important;
+            background-color: #ffffff !important;
+        }
+        .ts-dropdown {
+            border-radius: 8px !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
+            max-height: 280px !important;
+        }
+        .ts-dropdown .dropdown-input {
+            padding: 8px 12px !important;
+        }
+    </style>
 </head>
 <body>
 
@@ -64,7 +86,7 @@ $rating_options = [
             <li><a href="municipalities.php">Municipalities</a></li>
             <li><a href="compare.php">Compare</a></li>
             <li><a href="rankings.php">Rankings</a></li>
-            <li><a href="submit_issue.php" >Report Issue</a></li>
+            <li><a href="submit_issue.php">Report Issue</a></li>
             <li><a href="submit_review.php" class="active">Rate Now</a></li>
         </ul>
     </nav>
@@ -76,13 +98,15 @@ $rating_options = [
         <?php if ($message): ?><div class="alert success"><?= htmlspecialchars($message) ?></div><?php endif; ?>
         <?php if ($error): ?><div class="alert danger"><?= htmlspecialchars($error) ?></div><?php endif; ?>
 
-        <form method="POST" action="">
+        <form method="POST" action="submit_review.php">
             <div class="form-group">
                 <label>Municipality (Palika)</label>
-                <select name="palika_id" id="palikaSelect" required>
-                    <option value="">-- Select Palika --</option>
+                <select name="palika_id" id="palikaSelect" class="searchable-select" required>
+                    <option value="">-- Type to Search or Scroll Full List --</option>
                     <?php foreach ($palikas as $p): ?>
-                        <option value="<?= $p['id'] ?>"><?= htmlspecialchars($p['name']) ?> (<?= htmlspecialchars($p['district']) ?>)</option>
+                        <option value="<?= $p['id'] ?>" data-wards="<?= $p['total_wards'] ?>">
+                            <?= htmlspecialchars($p['name']) ?> (<?= htmlspecialchars($p['district']) ?>)
+                        </option>
                     <?php endforeach; ?>
                 </select>
             </div>
@@ -108,7 +132,7 @@ $rating_options = [
                     <label><?= $label ?> Rating</label>
                     <select name="<?= $field ?>" required>
                         <?php foreach ($rating_options as $display => $num_val): ?>
-                            <option value="<?= $num_val ?>" <?= $num_val == 1.0 ? 'selected' : '' ?>>
+                            <option value="<?= $num_val ?>" <?= $num_val == 3.0 ? 'selected' : '' ?>>
                                 <?= $display ?> / 5
                             </option>
                         <?php endforeach; ?>
@@ -125,5 +149,39 @@ $rating_options = [
         </form>
     </div>
 
-</body>
-</html>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var selectEl = document.getElementById('palikaSelect');
+            var wardSelect = document.getElementById('wardSelect');
+
+            if (selectEl) {
+                var ts = new TomSelect(selectEl, {
+                    create: false,
+                    maxOptions: null, // Shows all 753 items when no search term is entered
+                    sortField: { field: "text", direction: "asc" },
+                    plugins: ['dropdown_input'],
+                    placeholder: "Type municipality or district...",
+                    onChange: function(value) {
+                        // Update Ward numbers dynamically on change
+                        wardSelect.innerHTML = '<option value="">-- Choose Ward --</option>';
+                        if (!value) {
+                            wardSelect.innerHTML = '<option value="">-- Select Palika First --</option>';
+                            return;
+                        }
+
+                        var selectedOption = selectEl.querySelector('option[value="' + value + '"]');
+                        if (selectedOption) {
+                            var totalWards = parseInt(selectedOption.getAttribute('data-wards')) || 15;
+                            for (var i = 1; i <= totalWards; i++) {
+                                var opt = document.createElement('option');
+                                opt.value = i;
+                                opt.textContent = 'Ward ' + i;
+                                wardSelect.appendChild(opt);
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+
